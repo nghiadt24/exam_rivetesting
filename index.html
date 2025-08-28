@@ -1,0 +1,2143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Rive Animation Demo</title>
+  <script src="https://unpkg.com/@rive-app/canvas@2.11.1"></script>
+  <!-- Three.js + OrbitControls + GLTFLoader (dùng bản 0.150.1 để có global OrbitControls) -->
+  <script src="https://unpkg.com/three@0.150.1/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.150.1/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://unpkg.com/three@0.150.1/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://unpkg.com/three@0.150.1/examples/js/loaders/DRACOLoader.js"></script>
+  <style>
+    body {
+      background: #222;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #rive-container {
+      width: 300px;
+      height: 300px;
+      cursor: pointer;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+      background-color: white;
+      margin: 5% auto;
+      padding: 0;
+      border-radius: 20px;
+      width: 350px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+
+    .close {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      color: #666;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 1001;
+    }
+
+    .close:hover {
+      color: #333;
+    }
+
+    /* Card Styles */
+    .pricing-card {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      text-align: center;
+      position: relative;
+    }
+
+    .badge {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #FFD700, #FFA500);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      position: relative;
+      box-shadow: 0 8px 20px rgba(255, 215, 0, 0.3);
+    }
+
+    .badge::before {
+      content: '';
+      position: absolute;
+      top: -5px;
+      left: -5px;
+      right: -5px;
+      bottom: -5px;
+      background: linear-gradient(135deg, #FFD700, #FFA500);
+      border-radius: 50%;
+      z-index: -1;
+      opacity: 0.3;
+    }
+
+    .badge-number {
+      font-size: 32px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .stars {
+      position: absolute;
+      top: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 5px;
+    }
+
+    .star {
+      width: 12px;
+      height: 12px;
+      background: #FFD700;
+      clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    }
+
+    .plan-title {
+      font-size: 28px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 15px;
+    }
+
+    .price {
+      font-size: 32px;
+      font-weight: bold;
+      color: #FFD700;
+      margin-bottom: 5px;
+    }
+
+    .price-period {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 25px;
+    }
+
+    .features {
+      background: #f8f9fa;
+      border-radius: 15px;
+      padding: 25px;
+      margin-bottom: 25px;
+      text-align: left;
+    }
+
+    .feature {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .feature:last-child {
+      margin-bottom: 0;
+    }
+
+    .feature-icon {
+      width: 20px;
+      height: 20px;
+      background: #28a745;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+
+    .feature-icon::before {
+      content: '✓';
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .feature-text {
+      line-height: 1.4;
+    }
+
+    .feature-highlight {
+      color: #FFD700;
+      font-weight: bold;
+    }
+
+    .register-btn {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #FFD700, #FFA500);
+      border: none;
+      border-radius: 12px;
+      color: #333;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+    }
+
+    .register-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+    }
+
+    .register-btn:active {
+      transform: translateY(0);
+    }
+
+    /* Animation Modal Styles */
+    .animation-modal-content {
+      background-color: #1D5F44;
+      margin: 5% auto;
+      padding: 0;
+      border-radius: 20px;
+      width: 1200px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+
+    .animation-container {
+      padding: 30px 24px;
+      text-align: center;
+    }
+
+    .animation-title {
+      font-size: 24px;
+      font-weight: bold;
+      color: white;
+      margin-bottom: 25px;
+    }
+
+    .animation-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .animation-item {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      padding: 15px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .animation-item-title {
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+
+    .rive-container-small {
+      width: 180px;
+      height: 180px;
+      margin: 0 auto;
+      border-radius: 10px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .rive-container-small canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #modal-rive-container {
+      width: 200px;
+      height: 200px;
+      margin: 0 auto;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    #modal-rive-container canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .jump-btn {
+      margin-top: 12px;
+      padding: 8px 16px;
+      background: linear-gradient(135deg, #4CAF50, #45a049);
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 12px;
+    }
+
+    .jump-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+    }
+
+    /* Button Styles */
+    .show-modal-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 24px;
+      background: #FFD700;
+      border: none;
+      border-radius: 8px;
+      color: #333;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 999;
+    }
+
+    .show-animation-btn {
+      position: fixed;
+      top: 20px;
+      right: 200px;
+      padding: 12px 24px;
+      background: #4CAF50;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 999;
+    }
+
+    /* Three.js buttons */
+    .show-ken3d-btn, .show-hana3d-btn {
+      position: fixed;
+      top: 20px;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 999;
+    }
+    .show-ken3d-btn { right: 380px; background: #2196F3; }
+    .show-hana3d-btn { right: 560px; background: #9C27B0; }
+
+    /* Soccer Game buttons */
+    .show-soccer-btn, .show-soccer2-btn {
+      position: fixed;
+      top: 20px;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 999;
+    }
+    .show-soccer-btn { right: 740px; background: #FF5722; }
+    .show-soccer2-btn { right: 920px; background: #E91E63; }
+
+    /* Three.js modal content */
+    .three-modal-content {
+      background: #ffffff;
+      margin: 5% auto;
+      padding: 24px;
+      border-radius: 20px;
+      width: 960px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+    .three-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #222;
+      margin: 0 0 16px;
+      text-align: center;
+    }
+    .three-canvas-wrap {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+    #ken3dContainer, #hana3dContainer {
+      width: 860px;
+      height: 520px;
+      background: #90D2FF; /* light blue background */
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    /* Soccer Game Modal Styles */
+    .soccer-modal-content {
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      margin: 0;
+      padding: 40px;
+      border-radius: 0;
+      width: 100%;
+      height: 100vh;
+      box-shadow: none;
+      position: relative;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .soccer-title {
+      font-size: 28px;
+      font-weight: bold;
+      color: white;
+      margin-bottom: 20px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .soccer-animation-container {
+      width: 80vw;
+      height: 45vw;
+      max-width: 1280px;
+      max-height: 720px;
+      margin: 0 auto 30px;
+      border-radius: 15px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .soccer-animation-container canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .quiz-section {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 15px;
+      padding: 25px;
+      margin-top: 20px;
+    }
+
+    .quiz-question {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .quiz-answers {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .answer-btn {
+      padding: 15px 30px;
+      font-size: 20px;
+      font-weight: bold;
+      border: 3px solid #ddd;
+      border-radius: 12px;
+      background: white;
+      color: #333;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 80px;
+    }
+
+    .answer-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      border-color: #4CAF50;
+    }
+
+    .answer-btn.correct {
+      background: #4CAF50;
+      color: white;
+      border-color: #4CAF50;
+    }
+
+    .answer-btn.incorrect {
+      background: #f44336;
+      color: white;
+      border-color: #f44336;
+    }
+
+    .quiz-result {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+      padding: 15px;
+      border-radius: 10px;
+      display: none;
+    }
+
+    .quiz-result.correct {
+      background: #d4edda;
+      color: #155724;
+      border: 2px solid #c3e6cb;
+    }
+
+    .quiz-result.incorrect {
+      background: #f8d7da;
+      color: #721c24;
+      border: 2px solid #f5c6cb;
+    }
+
+    /* Soccer Game 2 Modal Styles */
+    .soccer2-modal-content {
+      background: linear-gradient(135deg, #673AB7, #9C27B0);
+      margin: 0;
+      padding: 40px;
+      border-radius: 0;
+      width: 100%;
+      height: 100vh;
+      box-shadow: none;
+      position: relative;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .soccer2-title {
+      font-size: 28px;
+      font-weight: bold;
+      color: white;
+      margin-bottom: 20px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .soccer2-animation-container {
+      width: 80vw;
+      height: 45vw;
+      max-width: 1280px;
+      max-height: 720px;
+      margin: 0 auto 30px;
+      border-radius: 15px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .soccer2-animation-container canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .quiz2-section {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 15px;
+      padding: 25px;
+      margin-top: 20px;
+    }
+
+    .quiz2-question {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 25px;
+    }
+
+    .quiz2-answers {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .answer2-btn {
+      padding: 15px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      border: 3px solid #ddd;
+      border-radius: 12px;
+      background: white;
+      color: #333;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+
+    .answer2-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      border-color: #673AB7;
+    }
+
+    .answer2-btn.correct {
+      background: #4CAF50;
+      color: white;
+      border-color: #4CAF50;
+    }
+
+    .answer2-btn.incorrect {
+      background: #f44336;
+      color: white;
+      border-color: #f44336;
+    }
+
+    .quiz2-result {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+      padding: 15px;
+      border-radius: 10px;
+      display: none;
+    }
+
+    .quiz2-result.correct {
+      background: #d4edda;
+      color: #155724;
+      border: 2px solid #c3e6cb;
+    }
+
+    .quiz2-result.incorrect {
+      background: #f8d7da;
+      color: #721c24;
+      border: 2px solid #f5c6cb;
+    }
+
+    /* Completion Modal Styles */
+    .completion-modal-content {
+      background: linear-gradient(135deg, #4CAF50, #45a049);
+      margin: 15% auto;
+      padding: 40px;
+      border-radius: 20px;
+      width: 500px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      position: relative;
+      text-align: center;
+      color: white;
+    }
+
+    .completion-title {
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .completion-score {
+      font-size: 48px;
+      font-weight: bold;
+      margin: 30px 0;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .completion-message {
+      font-size: 18px;
+      margin-bottom: 30px;
+      opacity: 0.9;
+    }
+
+    .completion-stats {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 15px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 10px 0;
+      font-size: 16px;
+    }
+
+    .play-again-btn {
+      background: white;
+      color: #4CAF50;
+      border: none;
+      padding: 15px 30px;
+      font-size: 18px;
+      font-weight: bold;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin: 10px;
+    }
+
+    .play-again-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .close-game-btn {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 2px solid white;
+      padding: 15px 30px;
+      font-size: 18px;
+      font-weight: bold;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin: 10px;
+    }
+
+    .close-game-btn:hover {
+      background: white;
+      color: #4CAF50;
+      transform: translateY(-2px);
+    }
+
+    /* Timer and Question Counter Styles */
+    .game-info {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 30px;
+      align-items: center;
+      z-index: 1001;
+    }
+
+    .timer-container {
+      background: rgba(255, 255, 255, 0.9);
+      padding: 10px 20px;
+      border-radius: 25px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .timer-icon {
+      font-size: 18px;
+    }
+
+    .timer-display {
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+      min-width: 60px;
+      text-align: center;
+    }
+
+    .timer-display.warning {
+      color: #ff6b6b;
+      animation: pulse 1s infinite;
+    }
+
+    .timer-display.danger {
+      color: #ff0000;
+      animation: pulse 0.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    .question-counter {
+      background: rgba(255, 255, 255, 0.9);
+      padding: 10px 20px;
+      border-radius: 25px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .counter-icon {
+      font-size: 18px;
+    }
+
+    .counter-display {
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+      min-width: 40px;
+      text-align: center;
+    }
+
+    /* Mute Button Styles */
+    .mute-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 45px;
+      height: 45px;
+      background: rgba(255, 255, 255, 0.9);
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s ease;
+      z-index: 1002;
+    }
+
+    .mute-btn:hover {
+      transform: scale(1.1);
+      background: rgba(255, 255, 255, 1);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .mute-btn.muted {
+      background: rgba(255, 100, 100, 0.9);
+      color: white;
+    }
+
+    .mute-btn.muted:hover {
+      background: rgba(255, 100, 100, 1);
+    }
+  </style>
+</head>
+<body>
+  <div id="rive-container"></div>
+
+  <!-- Show Pricing Modal Button -->
+  <button class="show-modal-btn" onclick="openPricingModal()">Xem Pricing</button>
+
+  <!-- Show Animation Modal Button -->
+  <button class="show-animation-btn" onclick="openAnimationModal()">Xem Ken Animation</button>
+
+  <!-- Three.js Open Buttons -->
+  <button class="show-hana3d-btn" onclick="openHana3DModal()">Xem Hana 3D</button>
+  <button class="show-ken3d-btn" onclick="openKen3DModal()">Xem Ken 3D</button>
+
+  <!-- Soccer Game Modal Button -->
+  <button class="show-soccer-btn" onclick="openSoccerModal()">Soccer Game</button>
+  
+  <!-- Soccer Game 2 Modal Button -->
+  <button class="show-soccer2-btn" onclick="openSoccer2Modal()">Soccer Game 2</button>
+
+  <!-- Pricing Modal -->
+  <div id="pricingModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closePricingModal()">&times;</span>
+      <div class="pricing-card">
+        <div class="badge">
+          <div class="stars">
+            <div class="star"></div>
+            <div class="star"></div>
+            <div class="star"></div>
+          </div>
+          <div class="badge-number">1</div>
+        </div>
+        
+        <div class="plan-title">Mastery</div>
+        
+        <div class="price">3.500.000₫</div>
+        <div class="price-period">/tháng</div>
+        
+        <div class="features">
+          <div class="feature">
+            <div class="feature-icon"></div>
+            <div class="feature-text">
+              <span class="feature-highlight">100.000 Credit</span>/ tháng
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon"></div>
+            <div class="feature-text">Tạo câu hỏi trắc nghiệm, tự luận, bài tập bằng AI.</div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon"></div>
+            <div class="feature-text">Tạo hình minh họa, video,... phục vụ giảng dạy hoặc học tập.</div>
+          </div>
+        </div>
+        
+        <button class="register-btn" onclick="handleRegister()">Đăng ký</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Animation Modal -->
+  <div id="animationModal" class="modal">
+    <div class="animation-modal-content">
+      <span class="close" onclick="closeAnimationModal()">&times;</span>
+      <div class="animation-container">
+        <div class="animation-title">Ken Animation</div>
+        
+        <!-- Horizontal row with all animations -->
+        <div class="animation-row">
+          <!-- Head Turn Down -->
+          <div class="animation-item">
+            <div class="animation-item-title">Head Turn Down</div>
+            <div id="head-down-container" class="rive-container-small"></div>
+            <button class="jump-btn" onclick="triggerHeadDown()">Turn Down</button>
+          </div>
+          
+          <!-- Head Turn Left -->
+          <div class="animation-item">
+            <div class="animation-item-title">Head Turn Left</div>
+            <div id="head-left-container" class="rive-container-small"></div>
+            <button class="jump-btn" onclick="triggerHeadLeft()">Turn Left</button>
+          </div>
+          
+          <!-- Main Jumping Animation (Center) -->
+          <div class="animation-item">
+            <div class="animation-item-title">Jumping</div>
+            <div id="modal-rive-container"></div>
+            <button class="jump-btn" onclick="triggerJump()">Trigger Jump</button>
+          </div>
+          
+          <!-- Head Turn Right -->
+          <div class="animation-item">
+            <div class="animation-item-title">Head Turn Right</div>
+            <div id="head-right-container" class="rive-container-small"></div>
+            <button class="jump-btn" onclick="triggerHeadRight()">Turn Right</button>
+          </div>
+          
+          <!-- Head Turn Up -->
+          <div class="animation-item">
+            <div class="animation-item-title">Head Turn Up</div>
+            <div id="head-up-container" class="rive-container-small"></div>
+            <button class="jump-btn" onclick="triggerHeadUp()">Turn Up</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ken 3D Modal -->
+  <div id="ken3dModal" class="modal">
+    <div class="three-modal-content">
+      <span class="close" onclick="closeKen3DModal()">&times;</span>
+      <div class="three-title">Ken 3D Viewer</div>
+      <div class="three-canvas-wrap">
+        <div id="ken3dContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hana 3D Modal -->
+  <div id="hana3dModal" class="modal">
+    <div class="three-modal-content">
+      <span class="close" onclick="closeHana3DModal()">&times;</span>
+      <div class="three-title">Hana 3D Viewer</div>
+      <div class="three-canvas-wrap">
+        <div id="hana3dContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Soccer Game Modal -->
+  <div id="soccerModal" class="modal">
+    <div class="soccer-modal-content">
+      <span class="close" onclick="closeSoccerModal()">&times;</span>
+      <div class="soccer-title">Soccer Game</div>
+      
+      <div id="soccer-animation-container" class="soccer-animation-container"></div>
+      
+      <div class="quiz-section">
+        <div class="quiz-question">1 + 1 = ?</div>
+        <div class="quiz-answers">
+          <button class="answer-btn" onclick="selectAnswer(2)">2</button>
+          <button class="answer-btn" onclick="selectAnswer(4)">4</button>
+        </div>
+        <div id="quiz-result" class="quiz-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Soccer Game 2 Modal -->
+  <div id="soccer2Modal" class="modal">
+    <div class="soccer2-modal-content">
+      <span class="close" onclick="closeSoccer2Modal()">&times;</span>
+      
+      <!-- Mute Button -->
+      <button id="mute-btn" class="mute-btn" onclick="toggleThemeMusic()" title="Toggle Theme Music">
+        🔊
+      </button>
+      
+      <!-- Game Info (Timer and Question Counter) -->
+      <div class="game-info">
+        <div class="timer-container">
+          <span class="timer-icon">⏱️</span>
+          <span id="timer-display" class="timer-display">2:00</span>
+        </div>
+        <div class="question-counter">
+          <span class="counter-icon">📝</span>
+          <span id="question-counter" class="counter-display">1/8</span>
+        </div>
+      </div>
+      
+      <div class="soccer2-title">Soccer Game 2</div>
+      
+      <div id="soccer2-animation-container" class="soccer2-animation-container"></div>
+      
+      <div class="quiz2-section">
+        <div class="quiz2-question">What color is the sky on a clear day?</div>
+        <div class="quiz2-answers">
+          <button class="answer2-btn">Blue</button>
+          <button class="answer2-btn">Red</button>
+          <button class="answer2-btn">Green</button>
+          <button class="answer2-btn">Yellow</button>
+        </div>
+        <div id="quiz2-result" class="quiz2-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Completion Modal -->
+  <div id="completionModal" class="modal">
+    <div class="completion-modal-content">
+      <div class="completion-title">🎉 Quiz Complete! 🎉</div>
+      
+      <div class="completion-score">
+        <span id="correct-count">0</span> / <span id="total-count">8</span>
+      </div>
+      
+      <div class="completion-message" id="completion-message">
+        Great job completing the quiz!
+      </div>
+      
+      <div class="completion-stats">
+        <div class="stat-row">
+          <span>Correct Answers:</span>
+          <span id="correct-stat">0</span>
+        </div>
+        <div class="stat-row">
+          <span>Wrong Answers:</span>
+          <span id="wrong-stat">0</span>
+        </div>
+        <div class="stat-row">
+          <span>Accuracy:</span>
+          <span id="accuracy-stat">0%</span>
+        </div>
+      </div>
+      
+      <div>
+        <button class="play-again-btn" onclick="playAgain()">Play Again</button>
+        <button class="close-game-btn" onclick="closeCompletionModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // First Rive Animation (icon_cup.riv)
+    const container = document.getElementById('rive-container');
+    const canvas = document.createElement('canvas');
+    canvas.width = 300;
+    canvas.height = 300;
+    container.appendChild(canvas);
+
+    let riveInstance;
+    riveInstance = new rive.Rive({
+      src: 'icon_cup.riv',
+      canvas: canvas,
+      autoplay: true,
+      stateMachines: ['HoverState'],
+      onLoad: () => {
+        // Nếu có input tên 'isHovering', xử lý hover
+        const inputs = riveInstance.stateMachineInputs('HoverState');
+        const hoverInput = inputs.find(i => i.name === 'isHovering');
+        if (hoverInput) {
+          container.addEventListener('mouseenter', () => {
+            hoverInput.value = true;
+          });
+          container.addEventListener('mouseleave', () => {
+            hoverInput.value = false;
+          });
+        }
+      }
+    });
+
+    // Modal Ken Animation
+    let modalRiveInstance;
+    let headDownInstance, headUpInstance, headLeftInstance, headRightInstance;
+
+    // Soccer Game Animation
+    let soccerRiveInstance;
+
+    // Soccer Game 2 Animation
+    let soccer2RiveInstance;
+
+    // Random questions and answers for Soccer Game 2
+    const quizQuestions = [
+      {
+        question: "What color is the sky on a clear day?",
+        correct: "Blue",
+        options: ["Blue", "Red", "Green", "Yellow"]
+      },
+      {
+        question: "How many days are in a week?",
+        correct: "7",
+        options: ["5", "6", "7", "8"]
+      },
+      {
+        question: "What is the capital of France?",
+        correct: "Paris",
+        options: ["London", "Berlin", "Paris", "Madrid"]
+      },
+      {
+        question: "Which animal is known as the King of the Jungle?",
+        correct: "Lion",
+        options: ["Tiger", "Lion", "Elephant", "Bear"]
+      },
+      {
+        question: "How many continents are there?",
+        correct: "7",
+        options: ["5", "6", "7", "8"]
+      },
+      {
+        question: "What is 5 + 3?",
+        correct: "8",
+        options: ["6", "7", "8", "9"]
+      },
+      {
+        question: "Which planet is closest to the Sun?",
+        correct: "Mercury",
+        options: ["Venus", "Earth", "Mercury", "Mars"]
+      },
+      {
+        question: "What do bees make?",
+        correct: "Honey",
+        options: ["Milk", "Honey", "Butter", "Cheese"]
+      }
+    ];
+
+    let currentQuestion = null;
+    let completedQuestions = [];
+    let correctAnswers = 0;
+    let gameTimer = null;
+    let timeRemaining = 120; // 2 minutes in seconds
+
+    // Audio elements for sound effects
+    let correctSound = null;
+    let incorrectSound = null;
+    let themeSong = null;
+    let isThemeMuted = false;
+
+    // Initialize sound effects
+    function initializeSounds() {
+      try {
+        correctSound = new Audio('correct.mp3');
+        incorrectSound = new Audio('incorrect.mp3');
+        themeSong = new Audio('themesong.mp3');
+        
+        // Set volume
+        correctSound.volume = 0.7;
+        incorrectSound.volume = 0.7;
+        themeSong.volume = 0.5; // Lower volume for background music
+        
+        // Preload the audio files
+        correctSound.preload = 'auto';
+        incorrectSound.preload = 'auto';
+        themeSong.preload = 'auto';
+        
+        // Set theme song to loop
+        themeSong.loop = true;
+        
+        console.log('Sound effects and theme song initialized');
+      } catch (e) {
+        console.log('Could not initialize sound effects:', e);
+      }
+    }
+
+    // Play correct answer sound
+    function playCorrectSound() {
+      try {
+        if (correctSound) {
+          correctSound.currentTime = 0; // Reset to beginning
+          correctSound.play().catch(e => {
+            console.log('Could not play correct sound:', e);
+          });
+        }
+      } catch (e) {
+        console.log('Error playing correct sound:', e);
+      }
+    }
+
+    // Play incorrect answer sound
+    function playIncorrectSound() {
+      try {
+        if (incorrectSound) {
+          incorrectSound.currentTime = 0; // Reset to beginning
+          incorrectSound.play().catch(e => {
+            console.log('Could not play incorrect sound:', e);
+          });
+        }
+      } catch (e) {
+        console.log('Error playing incorrect sound:', e);
+      }
+    }
+
+    // Play theme song
+    function playThemeSong() {
+      try {
+        if (themeSong && !isThemeMuted) {
+          themeSong.currentTime = 0; // Start from beginning
+          themeSong.play().catch(e => {
+            console.log('Could not play theme song:', e);
+          });
+        }
+      } catch (e) {
+        console.log('Error playing theme song:', e);
+      }
+    }
+
+    // Stop theme song
+    function stopThemeSong() {
+      try {
+        if (themeSong) {
+          themeSong.pause();
+          themeSong.currentTime = 0;
+        }
+      } catch (e) {
+        console.log('Error stopping theme song:', e);
+      }
+    }
+
+    // Stop all sound effects (correct/incorrect)
+    function stopSoundEffects() {
+      try {
+        if (correctSound) {
+          correctSound.pause();
+          correctSound.currentTime = 0;
+        }
+        if (incorrectSound) {
+          incorrectSound.pause();
+          incorrectSound.currentTime = 0;
+        }
+      } catch (e) {
+        console.log('Error stopping sound effects:', e);
+      }
+    }
+
+    // Toggle theme music on/off
+    function toggleThemeMusic() {
+      const muteBtn = document.getElementById('mute-btn');
+      
+      if (isThemeMuted) {
+        // Unmute - play theme song
+        isThemeMuted = false;
+        muteBtn.textContent = '🔊';
+        muteBtn.classList.remove('muted');
+        muteBtn.title = 'Mute Theme Music';
+        playThemeSong();
+        console.log('Theme music unmuted');
+      } else {
+        // Mute - stop theme song
+        isThemeMuted = true;
+        muteBtn.textContent = '🔇';
+        muteBtn.classList.add('muted');
+        muteBtn.title = 'Unmute Theme Music';
+        stopThemeSong();
+        console.log('Theme music muted');
+      }
+    }
+
+    // Pricing Modal functions
+    function openPricingModal() {
+      document.getElementById('pricingModal').style.display = 'block';
+    }
+
+    function closePricingModal() {
+      document.getElementById('pricingModal').style.display = 'none';
+    }
+
+    // Animation Modal functions
+    function openAnimationModal() {
+      document.getElementById('animationModal').style.display = 'block';
+      
+      // Create main Ken animation
+      const modalContainer = document.getElementById('modal-rive-container');
+      modalContainer.innerHTML = '';
+      
+      const modalCanvas = document.createElement('canvas');
+      modalCanvas.width = 200;
+      modalCanvas.height = 200;
+      modalContainer.appendChild(modalCanvas);
+
+      modalRiveInstance = new rive.Rive({
+        src: 'ken.riv',
+        canvas: modalCanvas,
+        autoplay: true,
+        stateMachines: ['Jumping'],
+        onLoad: () => {
+          console.log('Main Ken animation loaded in modal');
+        }
+      });
+
+      // Create head turn down animation
+      createHeadAnimation('head-down-container', 'head_turnDown', (instance) => {
+        headDownInstance = instance;
+      });
+
+      // Create head turn up animation
+      createHeadAnimation('head-up-container', 'head_turnUp', (instance) => {
+        headUpInstance = instance;
+      });
+
+      // Create head turn left animation
+      createHeadAnimation('head-left-container', 'head_turnLeft', (instance) => {
+        headLeftInstance = instance;
+      });
+
+      // Create head turn right animation
+      createHeadAnimation('head-right-container', 'head_turnRight', (instance) => {
+        headRightInstance = instance;
+      });
+    }
+
+    function createHeadAnimation(containerId, stateMachineName, callback) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = 180;
+      canvas.height = 180;
+      container.appendChild(canvas);
+
+      const instance = new rive.Rive({
+        src: 'ken.riv',
+        canvas: canvas,
+        autoplay: true,
+        stateMachines: [stateMachineName],
+        onLoad: () => {
+          console.log(`${stateMachineName} animation loaded`);
+          if (callback) callback(instance);
+        }
+      });
+    }
+
+    function closeAnimationModal() {
+      document.getElementById('animationModal').style.display = 'none';
+      // Clean up modal animations
+      modalRiveInstance = null;
+      headDownInstance = null;
+      headUpInstance = null;
+      headLeftInstance = null;
+      headRightInstance = null;
+    }
+
+    function triggerJump() {
+      if (modalRiveInstance) {
+        modalRiveInstance.play('Jumping');
+      }
+    }
+
+    function triggerHeadDown() {
+      if (headDownInstance) {
+        headDownInstance.play('head_turnDown');
+      }
+    }
+
+    function triggerHeadUp() {
+      if (headUpInstance) {
+        headUpInstance.play('head_turnUp');
+      }
+    }
+
+    function triggerHeadLeft() {
+      if (headLeftInstance) {
+        headLeftInstance.play('head_turnLeft');
+      }
+    }
+
+    function triggerHeadRight() {
+      if (headRightInstance) {
+        headRightInstance.play('head_turnRight');
+      }
+    }
+
+    function handleRegister() {
+      alert('Chức năng đăng ký sẽ được xử lý ở đây!');
+      // Thêm logic xử lý đăng ký thanh toán
+    }
+
+    // Soccer Modal functions
+    function openSoccerModal() {
+      document.getElementById('soccerModal').style.display = 'block';
+      
+      // Create soccer game animation
+      const soccerContainer = document.getElementById('soccer-animation-container');
+      soccerContainer.innerHTML = '';
+      
+      const soccerCanvas = document.createElement('canvas');
+      // Use container dimensions for responsive sizing
+      const containerWidth = Math.min(window.innerWidth * 0.8, 1280);
+      const containerHeight = Math.min(window.innerWidth * 0.45, 720);
+      soccerCanvas.width = containerWidth;
+      soccerCanvas.height = containerHeight;
+      soccerContainer.appendChild(soccerCanvas);
+
+      soccerRiveInstance = new rive.Rive({
+        src: 'soccergame_test.riv',
+        canvas: soccerCanvas,
+        autoplay: true,
+        onLoad: () => {
+          console.log('Soccer game animation loaded');
+          // Initialize with State Machine 1 (default/idle state)
+          try {
+            soccerRiveInstance.load({
+              stateMachines: ['State Machine 1']
+            });
+          } catch (e) {
+            console.log('Default state machine loaded automatically');
+          }
+        }
+      });
+
+      // Reset quiz state
+      resetQuiz();
+    }
+
+    function closeSoccerModal() {
+      document.getElementById('soccerModal').style.display = 'none';
+      // Clean up soccer animation
+      if (soccerRiveInstance) {
+        soccerRiveInstance.cleanup();
+        soccerRiveInstance = null;
+      }
+      resetQuiz();
+    }
+
+    function selectAnswer(answer) {
+      const answerBtns = document.querySelectorAll('.answer-btn');
+      const resultDiv = document.getElementById('quiz-result');
+      
+      // Disable all buttons
+      answerBtns.forEach(btn => {
+        btn.disabled = true;
+        btn.style.cursor = 'not-allowed';
+      });
+
+      if (answer === 2) {
+        // Correct answer
+        answerBtns[0].classList.add('correct');
+        resultDiv.textContent = 'Chính xác! Bạn đã chọn đúng đáp án.';
+        resultDiv.className = 'quiz-result correct';
+        resultDiv.style.display = 'block';
+        
+        // Trigger correct state machine
+        if (soccerRiveInstance) {
+          try {
+            // Load the state machine if not already loaded
+            soccerRiveInstance.load({
+              stateMachines: ['correct']
+            });
+          } catch (e) {
+            console.log('Trying alternative approach for correct state machine');
+            try {
+              const inputs = soccerRiveInstance.stateMachineInputs('State Machine 1');
+              const correctInput = inputs.find(i => i.name === 'correct');
+              if (correctInput) {
+                correctInput.fire();
+              }
+            } catch (e2) {
+              soccerRiveInstance.play('correct');
+            }
+          }
+        }
+      } else {
+        // Incorrect answer
+        answerBtns[1].classList.add('incorrect');
+        resultDiv.textContent = 'Sai rồi! Đáp án đúng là 2.';
+        resultDiv.className = 'quiz-result incorrect';
+        resultDiv.style.display = 'block';
+        
+        // Trigger incorrect state machine
+        if (soccerRiveInstance) {
+          try {
+            // Load the state machine if not already loaded
+            soccerRiveInstance.load({
+              stateMachines: ['incorrect']
+            });
+          } catch (e) {
+            console.log('Trying alternative approach for incorrect state machine');
+            try {
+              const inputs = soccerRiveInstance.stateMachineInputs('State Machine 1');
+              const incorrectInput = inputs.find(i => i.name === 'incorrect');
+              if (incorrectInput) {
+                incorrectInput.fire();
+              }
+            } catch (e2) {
+              soccerRiveInstance.play('incorrect');
+            }
+          }
+        }
+      }
+
+      // Reset after 3 seconds
+      setTimeout(() => {
+        resetQuizAndAnimation();
+      }, 3000);
+    }
+
+    function resetQuiz() {
+      const answerBtns = document.querySelectorAll('.answer-btn');
+      const resultDiv = document.getElementById('quiz-result');
+      
+      answerBtns.forEach(btn => {
+        btn.disabled = false;
+        btn.style.cursor = 'pointer';
+        btn.classList.remove('correct', 'incorrect');
+      });
+      
+      resultDiv.style.display = 'none';
+      resultDiv.className = 'quiz-result';
+    }
+
+    function resetQuizAndAnimation() {
+      // Reset quiz UI
+      resetQuiz();
+      
+      // Reset animation to initial position
+      if (soccerRiveInstance) {
+        try {
+          // Stop current animation and reset
+          soccerRiveInstance.stop();
+          
+          // Reload the animation to reset to initial state
+          soccerRiveInstance.reset();
+          
+          // Load default state machine
+          soccerRiveInstance.load({
+            stateMachines: ['State Machine 1']
+          });
+          
+          // Play from beginning
+          soccerRiveInstance.play();
+          
+        } catch (e) {
+          console.log('Trying alternative reset approach');
+          try {
+            // Alternative approach: recreate the animation
+            const soccerContainer = document.getElementById('soccer-animation-container');
+            soccerContainer.innerHTML = '';
+            
+            const soccerCanvas = document.createElement('canvas');
+            // Use container dimensions for responsive sizing
+            const containerWidth = Math.min(window.innerWidth * 0.8, 1280);
+            const containerHeight = Math.min(window.innerWidth * 0.45, 720);
+            soccerCanvas.width = containerWidth;
+            soccerCanvas.height = containerHeight;
+            soccerContainer.appendChild(soccerCanvas);
+
+            soccerRiveInstance = new rive.Rive({
+              src: 'soccergame_test.riv',
+              canvas: soccerCanvas,
+              autoplay: true,
+              onLoad: () => {
+                console.log('Soccer game animation reset and reloaded');
+                try {
+                  soccerRiveInstance.load({
+                    stateMachines: ['State Machine 1']
+                  });
+                } catch (e) {
+                  console.log('Default state machine loaded automatically');
+                }
+              }
+            });
+          } catch (e2) {
+            console.log('Animation reset completed');
+          }
+        }
+      }
+    }
+
+    // Function to generate random question
+    function generateRandomQuestion() {
+      // Get remaining questions (not yet completed)
+      const remainingQuestions = quizQuestions.filter(q => !completedQuestions.includes(q));
+      
+      // If no questions left, show completion modal
+      if (remainingQuestions.length === 0) {
+        showCompletionModal();
+        return;
+      }
+      
+      // Select random question from remaining
+      const randomIndex = Math.floor(Math.random() * remainingQuestions.length);
+      currentQuestion = remainingQuestions[randomIndex];
+      
+      // Shuffle the options
+      const shuffledOptions = [...currentQuestion.options].sort(() => Math.random() - 0.5);
+      
+      // Update question text
+      document.querySelector('.quiz2-question').textContent = currentQuestion.question;
+      
+      // Update answer buttons with event listeners
+      const answerBtns = document.querySelectorAll('.answer2-btn');
+      shuffledOptions.forEach((option, index) => {
+        if (answerBtns[index]) {
+          answerBtns[index].textContent = option;
+          // Remove existing event listeners
+          answerBtns[index].replaceWith(answerBtns[index].cloneNode(true));
+        }
+      });
+      
+      // Re-get buttons after cloning and add new event listeners
+      const newAnswerBtns = document.querySelectorAll('.answer2-btn');
+      shuffledOptions.forEach((option, index) => {
+        if (newAnswerBtns[index]) {
+          newAnswerBtns[index].addEventListener('click', () => {
+            selectAnswer2(option);
+          });
+        }
+      });
+      
+      console.log(`Generated question: ${currentQuestion.question}`);
+      console.log(`Correct answer: ${currentQuestion.correct}`);
+      console.log(`Questions remaining: ${remainingQuestions.length - 1}`);
+    }
+
+    // Timer functions
+    function startGameTimer() {
+      timeRemaining = 120; // Reset to 2 minutes
+      updateTimerDisplay();
+      
+      gameTimer = setInterval(() => {
+        timeRemaining--;
+        updateTimerDisplay();
+        
+        if (timeRemaining <= 0) {
+          clearInterval(gameTimer);
+          endGameDueToTimeout();
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const minutes = Math.floor(timeRemaining / 60);
+      const seconds = timeRemaining % 60;
+      const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      
+      const timerDisplay = document.getElementById('timer-display');
+      timerDisplay.textContent = timeString;
+      
+      // Add warning classes based on time remaining
+      timerDisplay.classList.remove('warning', 'danger');
+      if (timeRemaining <= 30) {
+        timerDisplay.classList.add('danger');
+      } else if (timeRemaining <= 60) {
+        timerDisplay.classList.add('warning');
+      }
+    }
+
+    function stopGameTimer() {
+      if (gameTimer) {
+        clearInterval(gameTimer);
+        gameTimer = null;
+      }
+    }
+
+    function endGameDueToTimeout() {
+      // Show timeout message and end game
+      const resultDiv = document.getElementById('quiz2-result');
+      resultDiv.textContent = '⏰ Time\'s up! Game over.';
+      resultDiv.className = 'quiz2-result incorrect';
+      resultDiv.style.display = 'block';
+      
+      // Disable all buttons
+      const answerBtns = document.querySelectorAll('.answer2-btn');
+      answerBtns.forEach(btn => {
+        btn.disabled = true;
+        btn.style.cursor = 'not-allowed';
+      });
+      
+      // Show completion modal after 2 seconds
+      setTimeout(() => {
+        showCompletionModal();
+      }, 2000);
+    }
+
+    function updateQuestionCounter() {
+      const currentQuestionNumber = completedQuestions.length + 1;
+      const totalQuestions = quizQuestions.length;
+      const counterDisplay = document.getElementById('question-counter');
+      counterDisplay.textContent = `${currentQuestionNumber}/${totalQuestions}`;
+    }
+
+    // Soccer Game 2 Modal functions
+    function openSoccer2Modal() {
+      document.getElementById('soccer2Modal').style.display = 'block';
+      
+      // Initialize sound effects
+      initializeSounds();
+      
+      // Reset mute button state
+      isThemeMuted = false;
+      const muteBtn = document.getElementById('mute-btn');
+      muteBtn.textContent = '🔊';
+      muteBtn.classList.remove('muted');
+      muteBtn.title = 'Mute Theme Music';
+      
+      // Play theme song
+      setTimeout(() => {
+        playThemeSong();
+      }, 500); // Small delay to ensure sounds are loaded
+      
+      // Reset game state
+      completedQuestions = [];
+      correctAnswers = 0;
+      
+      // Start timer
+      startGameTimer();
+      
+      // Update question counter
+      updateQuestionCounter();
+      
+      // Generate random question
+      generateRandomQuestion();
+      
+      // Create soccer game 2 animation
+      const soccer2Container = document.getElementById('soccer2-animation-container');
+      soccer2Container.innerHTML = '';
+      
+      const soccer2Canvas = document.createElement('canvas');
+      // Use container dimensions for responsive sizing
+      const containerWidth = Math.min(window.innerWidth * 0.8, 1280);
+      const containerHeight = Math.min(window.innerWidth * 0.45, 720);
+      soccer2Canvas.width = containerWidth;
+      soccer2Canvas.height = containerHeight;
+      soccer2Container.appendChild(soccer2Canvas);
+
+      soccer2RiveInstance = new rive.Rive({
+        src: 'soccergame.riv',
+        canvas: soccer2Canvas,
+        autoplay: true,
+        stateMachines: ['rest'],
+        onLoad: () => {
+          console.log('Soccer game 2 animation loaded with rest state');
+        }
+      });
+
+      // Reset quiz state
+      resetQuiz2();
+    }
+
+    function closeSoccer2Modal() {
+      document.getElementById('soccer2Modal').style.display = 'none';
+      
+      // Stop timer
+      stopGameTimer();
+      
+      // Stop all audio
+      stopThemeSong();
+      stopSoundEffects();
+      
+      // Clean up soccer 2 animation
+      if (soccer2RiveInstance) {
+        soccer2RiveInstance.cleanup();
+        soccer2RiveInstance = null;
+      }
+      resetQuiz2();
+    }
+
+    function selectAnswer2(answer) {
+      const answerBtns = document.querySelectorAll('.answer2-btn');
+      const resultDiv = document.getElementById('quiz2-result');
+      
+      // Disable all buttons
+      answerBtns.forEach(btn => {
+        btn.disabled = true;
+        btn.style.cursor = 'not-allowed';
+      });
+
+      if (answer === currentQuestion.correct) {
+        // Correct answer
+        correctAnswers++;
+        const correctBtn = Array.from(answerBtns).find(btn => btn.textContent === answer);
+        correctBtn.classList.add('correct');
+        resultDiv.textContent = `Correct! The answer is ${currentQuestion.correct}.`;
+        resultDiv.className = 'quiz2-result correct';
+        resultDiv.style.display = 'block';
+        
+        // Play correct sound effect
+        playCorrectSound();
+        
+        // Trigger random correct animation (correct_1, correct_2, or correct_3)
+        if (soccer2RiveInstance) {
+          const correctAnimations = ['correct_1', 'correct_2', 'correct_3'];
+          const randomCorrect = correctAnimations[Math.floor(Math.random() * correctAnimations.length)];
+          
+          try {
+            soccer2RiveInstance.load({
+              stateMachines: [randomCorrect]
+            });
+            console.log(`Playing random correct animation: ${randomCorrect}`);
+          } catch (e) {
+            console.log(`Trying alternative approach for ${randomCorrect} state machine`);
+            try {
+              const inputs = soccer2RiveInstance.stateMachineInputs('rest');
+              const correctInput = inputs.find(i => i.name === randomCorrect);
+              if (correctInput) {
+                correctInput.fire();
+              }
+            } catch (e2) {
+              soccer2RiveInstance.play(randomCorrect);
+            }
+          }
+        }
+      } else {
+        // Incorrect answer
+        const incorrectBtn = Array.from(answerBtns).find(btn => btn.textContent === answer);
+        incorrectBtn.classList.add('incorrect');
+        resultDiv.textContent = `Wrong! The correct answer is ${currentQuestion.correct}.`;
+        resultDiv.className = 'quiz2-result incorrect';
+        resultDiv.style.display = 'block';
+        
+        // Play incorrect sound effect
+        playIncorrectSound();
+        
+        // Trigger random incorrect animation (incorrect_1, incorrect_2, or incorrect_3)
+        if (soccer2RiveInstance) {
+          const incorrectAnimations = ['incorrect_1', 'incorrect_2', 'incorrect_3'];
+          const randomIncorrect = incorrectAnimations[Math.floor(Math.random() * incorrectAnimations.length)];
+          
+          try {
+            soccer2RiveInstance.load({
+              stateMachines: [randomIncorrect]
+            });
+            console.log(`Playing random incorrect animation: ${randomIncorrect}`);
+          } catch (e) {
+            console.log(`Trying alternative approach for ${randomIncorrect} state machine`);
+            try {
+              const inputs = soccer2RiveInstance.stateMachineInputs('rest');
+              const incorrectInput = inputs.find(i => i.name === randomIncorrect);
+              if (incorrectInput) {
+                incorrectInput.fire();
+              }
+            } catch (e2) {
+              soccer2RiveInstance.play(randomIncorrect);
+            }
+          }
+        }
+      }
+
+      // Mark question as completed
+      completedQuestions.push(currentQuestion);
+      
+      // Reset after 3 seconds
+      setTimeout(() => {
+        resetQuiz2AndAnimation();
+      }, 3000);
+    }
+
+    function resetQuiz2() {
+      const answerBtns = document.querySelectorAll('.answer2-btn');
+      const resultDiv = document.getElementById('quiz2-result');
+      
+      answerBtns.forEach(btn => {
+        btn.disabled = false;
+        btn.style.cursor = 'pointer';
+        btn.classList.remove('correct', 'incorrect');
+      });
+      
+      resultDiv.style.display = 'none';
+      resultDiv.className = 'quiz2-result';
+    }
+
+    function resetQuiz2AndAnimation() {
+      // Stop any playing sound effects before moving to next question
+      stopSoundEffects();
+      
+      // Reset quiz UI
+      resetQuiz2();
+      
+      // Update question counter
+      updateQuestionCounter();
+      
+      // Generate new random question
+      generateRandomQuestion();
+      
+      // Reset animation to rest state
+      if (soccer2RiveInstance) {
+        try {
+          // Stop current animation and reset
+          soccer2RiveInstance.stop();
+          
+          // Reload the animation to reset to initial state
+          soccer2RiveInstance.reset();
+          
+          // Load rest state machine
+          soccer2RiveInstance.load({
+            stateMachines: ['rest']
+          });
+          
+          // Play from beginning
+          soccer2RiveInstance.play();
+          
+        } catch (e) {
+          console.log('Trying alternative reset approach for Soccer 2');
+          try {
+            // Alternative approach: recreate the animation
+            const soccer2Container = document.getElementById('soccer2-animation-container');
+            soccer2Container.innerHTML = '';
+            
+            const soccer2Canvas = document.createElement('canvas');
+            // Use container dimensions for responsive sizing
+            const containerWidth = Math.min(window.innerWidth * 0.8, 1280);
+            const containerHeight = Math.min(window.innerWidth * 0.45, 720);
+            soccer2Canvas.width = containerWidth;
+            soccer2Canvas.height = containerHeight;
+            soccer2Container.appendChild(soccer2Canvas);
+
+            soccer2RiveInstance = new rive.Rive({
+              src: 'soccergame.riv',
+              canvas: soccer2Canvas,
+              autoplay: true,
+              stateMachines: ['rest'],
+              onLoad: () => {
+                console.log('Soccer game 2 animation reset and reloaded with rest state');
+              }
+            });
+          } catch (e2) {
+            console.log('Soccer 2 animation reset completed');
+          }
+        }
+      }
+    }
+
+    // Completion Modal functions
+    function showCompletionModal() {
+      // Stop the timer
+      stopGameTimer();
+      
+      // Stop all audio
+      stopThemeSong();
+      stopSoundEffects();
+      
+      const totalQuestions = quizQuestions.length;
+      const wrongAnswers = totalQuestions - correctAnswers;
+      const accuracy = Math.round((correctAnswers / totalQuestions) * 100);
+      
+      // Update completion modal content
+      document.getElementById('correct-count').textContent = correctAnswers;
+      document.getElementById('total-count').textContent = totalQuestions;
+      document.getElementById('correct-stat').textContent = correctAnswers;
+      document.getElementById('wrong-stat').textContent = wrongAnswers;
+      document.getElementById('accuracy-stat').textContent = accuracy + '%';
+      
+      // Update completion message based on performance
+      let message = '';
+      if (accuracy >= 90) {
+        message = '🌟 Excellent! You\'re a quiz master!';
+      } else if (accuracy >= 70) {
+        message = '👍 Great job! Well done!';
+      } else if (accuracy >= 50) {
+        message = '👌 Good effort! Keep practicing!';
+      } else {
+        message = '💪 Don\'t give up! Try again!';
+      }
+      document.getElementById('completion-message').textContent = message;
+      
+      // Hide soccer modal and show completion modal
+      document.getElementById('soccer2Modal').style.display = 'none';
+      document.getElementById('completionModal').style.display = 'block';
+      
+      console.log(`Quiz completed: ${correctAnswers}/${totalQuestions} (${accuracy}%)`);
+    }
+
+    function closeCompletionModal() {
+      document.getElementById('completionModal').style.display = 'none';
+    }
+
+    function playAgain() {
+      // Close completion modal
+      document.getElementById('completionModal').style.display = 'none';
+      
+      // Restart the game
+      openSoccer2Modal();
+    }
+
+    // ===== Three.js helpers =====
+    function initThreeViewer(containerId, glbUrl) {
+      const container = document.getElementById(containerId);
+      if (!container) return null;
+
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+      renderer.setPixelRatio(window.devicePixelRatio || 1);
+      renderer.setSize(width, height);
+      renderer.setClearColor(0x90D2FF, 1);
+      if (THREE.ColorManagement) {
+        // three r155+ uses LinearSRGBColorSpace
+        renderer.outputColorSpace = THREE.SRGBColorSpace || THREE.LinearSRGBColorSpace || renderer.outputColorSpace;
+      }
+      container.appendChild(renderer.domElement);
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x90D2FF);
+
+      const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 2000);
+      camera.position.set(2, 2, 3);
+
+      const ControlsClass = (THREE.OrbitControls || (window.THREE && window.THREE.OrbitControls));
+      const controls = new ControlsClass(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+
+      const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0);
+      hemi.position.set(0, 20, 0);
+      scene.add(hemi);
+
+      const dir = new THREE.DirectionalLight(0xffffff, 1.0);
+      dir.position.set(5, 10, 7.5);
+      scene.add(dir);
+
+      const loader = new THREE.GLTFLoader();
+      if (THREE.DRACOLoader) {
+        const draco = new THREE.DRACOLoader();
+        draco.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+        loader.setDRACOLoader(draco);
+      }
+      let mixer = null;
+      let model = null;
+      loader.load(glbUrl, (gltf) => {
+        model = gltf.scene;
+        scene.add(model);
+        // Fit model
+        const box = new THREE.Box3().setFromObject(model);
+        const size = new THREE.Vector3(); box.getSize(size);
+        const center = new THREE.Vector3(); box.getCenter(center);
+        model.position.sub(center);
+        const maxSize = Math.max(size.x, size.y, size.z) || 1;
+        const fitDist = maxSize * 1.8;
+        camera.position.set(0, maxSize * 0.6, fitDist);
+        camera.lookAt(0, 0, 0);
+        controls.update();
+
+        if (gltf.animations && gltf.animations.length) {
+          mixer = new THREE.AnimationMixer(model);
+          const clip = gltf.animations[0];
+          mixer.clipAction(clip).play();
+        }
+      }, undefined, (err) => {
+        console.error('GLB load error:', err);
+        const msg = document.createElement('div');
+        msg.style.cssText = 'position:absolute;top:8px;left:8px;color:#000;background:#fff;padding:6px 10px;border-radius:8px;font:12px/1.2 system-ui;';
+        msg.textContent = 'Không tải được model: ' + glbUrl + '. Hãy chạy qua server (vd: npx http-server).';
+        container.appendChild(msg);
+      });
+
+      const clock = new THREE.Clock();
+      let rafId;
+      function animate() {
+        rafId = requestAnimationFrame(animate);
+        const delta = clock.getDelta();
+        if (mixer) mixer.update(delta);
+        controls.update();
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      function onResize() {
+        const w = container.clientWidth || width;
+        const h = container.clientHeight || height;
+        renderer.setSize(w, h);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+      }
+      window.addEventListener('resize', onResize);
+
+      return {
+        dispose() {
+          cancelAnimationFrame(rafId);
+          window.removeEventListener('resize', onResize);
+          controls.dispose();
+          renderer.dispose();
+          if (renderer.domElement && renderer.domElement.parentNode === container) {
+            container.removeChild(renderer.domElement);
+          }
+        }
+      };
+    }
+
+    let kenViewer = null;
+    let hanaViewer = null;
+
+    function openKen3DModal() {
+      document.getElementById('ken3dModal').style.display = 'block';
+      // Initialize viewer
+      if (kenViewer) { kenViewer.dispose(); kenViewer = null; }
+      kenViewer = initThreeViewer('ken3dContainer', 'Ken.glb');
+    }
+
+    function closeKen3DModal() {
+      document.getElementById('ken3dModal').style.display = 'none';
+      if (kenViewer) { kenViewer.dispose(); kenViewer = null; }
+    }
+
+    function openHana3DModal() {
+      document.getElementById('hana3dModal').style.display = 'block';
+      if (hanaViewer) { hanaViewer.dispose(); hanaViewer = null; }
+      hanaViewer = initThreeViewer('hana3dContainer', 'Hana.glb');
+    }
+
+    function closeHana3DModal() {
+      document.getElementById('hana3dModal').style.display = 'none';
+      if (hanaViewer) { hanaViewer.dispose(); hanaViewer = null; }
+    }
+
+    // Close modals when clicking outside
+    window.onclick = function(event) {
+      const pricingModal = document.getElementById('pricingModal');
+      const animationModal = document.getElementById('animationModal');
+      const ken3dModal = document.getElementById('ken3dModal');
+      const hana3dModal = document.getElementById('hana3dModal');
+      const soccerModal = document.getElementById('soccerModal');
+      const soccer2Modal = document.getElementById('soccer2Modal');
+      const completionModal = document.getElementById('completionModal');
+      
+      if (event.target === pricingModal) {
+        closePricingModal();
+      }
+      if (event.target === animationModal) {
+        closeAnimationModal();
+      }
+      if (event.target === ken3dModal) {
+        closeKen3DModal();
+      }
+      if (event.target === hana3dModal) {
+        closeHana3DModal();
+      }
+      if (event.target === soccerModal) {
+        closeSoccerModal();
+      }
+      if (event.target === soccer2Modal) {
+        closeSoccer2Modal();
+      }
+      if (event.target === completionModal) {
+        closeCompletionModal();
+      }
+    }
+  </script>
+</body>
+</html>
