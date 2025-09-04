@@ -1730,9 +1730,9 @@
         src: 'soccergame.riv',
         canvas: soccer2Canvas,
         autoplay: true,
-        stateMachines: ['rest'],
+        stateMachines: ['normal'],
         onLoad: () => {
-          console.log('Soccer game 2 animation loaded with rest state');
+          console.log('Soccer game 2 animation loaded with normal state');
         }
       });
 
@@ -1780,9 +1780,9 @@
         // Play correct sound effect
         playCorrectSound();
         
-        // Trigger random correct animation (correct_1, correct_2, or correct_3)
+        // Trigger random correct animation (correct_01 or correct_02)
         if (soccer2RiveInstance) {
-          const correctAnimations = ['correct_1', 'correct_2', 'correct_3'];
+          const correctAnimations = ['correct_01', 'correct_02'];
           const randomCorrect = correctAnimations[Math.floor(Math.random() * correctAnimations.length)];
           
           try {
@@ -1793,7 +1793,7 @@
           } catch (e) {
             console.log(`Trying alternative approach for ${randomCorrect} state machine`);
             try {
-              const inputs = soccer2RiveInstance.stateMachineInputs('rest');
+              const inputs = soccer2RiveInstance.stateMachineInputs('normal');
               const correctInput = inputs.find(i => i.name === randomCorrect);
               if (correctInput) {
                 correctInput.fire();
@@ -1814,9 +1814,9 @@
         // Play incorrect sound effect
         playIncorrectSound();
         
-        // Trigger random incorrect animation (incorrect_1, incorrect_2, or incorrect_3)
+        // Trigger random incorrect animation (incorrect_01 or incorrect_02)
         if (soccer2RiveInstance) {
-          const incorrectAnimations = ['incorrect_1', 'incorrect_2', 'incorrect_3'];
+          const incorrectAnimations = ['incorrect_01', 'incorrect_02'];
           const randomIncorrect = incorrectAnimations[Math.floor(Math.random() * incorrectAnimations.length)];
           
           try {
@@ -1827,7 +1827,7 @@
           } catch (e) {
             console.log(`Trying alternative approach for ${randomIncorrect} state machine`);
             try {
-              const inputs = soccer2RiveInstance.stateMachineInputs('rest');
+              const inputs = soccer2RiveInstance.stateMachineInputs('normal');
               const incorrectInput = inputs.find(i => i.name === randomIncorrect);
               if (incorrectInput) {
                 incorrectInput.fire();
@@ -1884,9 +1884,9 @@
           // Reload the animation to reset to initial state
           soccer2RiveInstance.reset();
           
-          // Load rest state machine
+          // Load normal state machine
           soccer2RiveInstance.load({
-            stateMachines: ['rest']
+            stateMachines: ['normal']
           });
           
           // Play from beginning
@@ -1911,9 +1911,9 @@
               src: 'soccergame.riv',
               canvas: soccer2Canvas,
               autoplay: true,
-              stateMachines: ['rest'],
+              stateMachines: ['normal'],
               onLoad: () => {
-                console.log('Soccer game 2 animation reset and reloaded with rest state');
+                console.log('Soccer game 2 animation reset and reloaded with normal state');
               }
             });
           } catch (e2) {
